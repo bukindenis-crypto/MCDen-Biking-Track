@@ -693,6 +693,7 @@ fun EmptyState() {
 @Composable
 fun GoalDialog(currentGoal: Double, onDismiss: () -> Unit, onConfirm: (Double) -> Unit) {
     var text by remember { mutableStateOf(if (currentGoal > 0) currentGoal.toString() else "") }
+    var error by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -700,18 +701,36 @@ fun GoalDialog(currentGoal: Double, onDismiss: () -> Unit, onConfirm: (Double) -
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
+                onValueChange = { 
+                    text = it
+                    error = false
+                },
                 label = { Text("Километров в месяц") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
+                isError = error,
+                supportingText = {
+                    if (error) {
+                        Text(
+                            "Введите число больше 0",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    val km = text.replace(",", ".").toDoubleOrNull() ?: 0.0
-                    if (km > 0) onConfirm(km)
+                    val cleanText = text.replace(",", ".").trim()
+                    val km = cleanText.toDoubleOrNull()
+                    
+                    if (km != null && km > 0) {
+                        onConfirm(km)
+                    } else {
+                        error = true
+                    }
                 }
             ) {
                 Text("Сохранить")
@@ -728,6 +747,7 @@ fun GoalDialog(currentGoal: Double, onDismiss: () -> Unit, onConfirm: (Double) -
 @Composable
 fun AddRideDialog(onDismiss: () -> Unit, onConfirm: (Double) -> Unit) {
     var text by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -741,10 +761,22 @@ fun AddRideDialog(onDismiss: () -> Unit, onConfirm: (Double) -> Unit) {
                 )
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { text = it },
+                    onValueChange = { 
+                        text = it
+                        error = false
+                    },
                     label = { Text("Километров") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
+                    isError = error,
+                    supportingText = {
+                        if (error) {
+                            Text(
+                                "Введите число больше 0",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -752,8 +784,14 @@ fun AddRideDialog(onDismiss: () -> Unit, onConfirm: (Double) -> Unit) {
         confirmButton = {
             TextButton(
                 onClick = {
-                    val km = text.replace(",", ".").toDoubleOrNull() ?: 0.0
-                    if (km > 0) onConfirm(km)
+                    val cleanText = text.replace(",", ".").trim()
+                    val km = cleanText.toDoubleOrNull()
+                    
+                    if (km != null && km > 0) {
+                        onConfirm(km)
+                    } else {
+                        error = true
+                    }
                 }
             ) {
                 Text("Добавить")
