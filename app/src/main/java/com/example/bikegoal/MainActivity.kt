@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +90,7 @@ fun SplashScreen() {
         initialValue = 1f,
         targetValue = 1.08f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = EaseInOutCubic),
+            animation = tween(1200, easing = CubicBezierEasing(0.65f, 0.0f, 0.35f, 1.0f)),
             repeatMode = RepeatMode.Reverse
         ),
         label = "scale"
@@ -204,7 +205,7 @@ fun LoadingBar() {
         modifier = Modifier
             .width(200.dp)
             .height(4.dp)
-            .background(Color.White.copy(alpha = 0.2f), shape = MaterialTheme.shapes.small)
+            .background(Color.White.copy(alpha = 0.2f), shape = androidx.compose.foundation.shape.RoundedCornerShape(2.dp))
     ) {
         Box(
             modifier = Modifier
@@ -218,7 +219,7 @@ fun LoadingBar() {
                             Color.White
                         )
                     ),
-                    shape = MaterialTheme.shapes.small
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(2.dp)
                 )
         )
     }
