@@ -149,7 +149,7 @@ fun SplashScreen() {
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.alpha(textAlpha)
+                modifier = Modifier.graphicsLayer { this.alpha = textAlpha }
             ) {
                 Text(
                     text = "MCDen",
