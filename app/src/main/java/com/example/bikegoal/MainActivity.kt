@@ -305,26 +305,19 @@ fun BikeGoalApp() {
     val context = LocalContext.current
     val dataStore = remember { BikeDataStore(context) }
 
-    var goal by remember { mutableStateOf(dataStore.getGoal()) }
+    // Используем mutableIntStateOf вместо mutableStateOf для чисел
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    
+    // Пересчитываем данные при каждом изменении refreshTrigger
+    val goal by remember(refreshTrigger) { mutableStateOf(dataStore.getGoal()) }
+    val totalRidden by remember(refreshTrigger) { mutableStateOf(dataStore.getTotalRidden()) }
+    val remaining by remember(refreshTrigger) { mutableStateOf(dataStore.getRemaining()) }
+    val progress by remember(refreshTrigger) { mutableStateOf(dataStore.getProgress()) }
+    val rides by remember(refreshTrigger) { mutableStateOf(dataStore.getRides().sortedByDescending { it.timestamp }) }
+
     var showGoalDialog by remember { mutableStateOf(goal == 0.0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
-    
-    // Триггер для принудительного обновления данных
-    var refreshTrigger by remember { mutableStateOf(0) }
-
-    val totalRidden = remember(goal, showAddDialog, showGoalDialog, showResetDialog, refreshTrigger) {
-        dataStore.getTotalRidden()
-    }
-    val remaining = remember(goal, showAddDialog, showGoalDialog, showResetDialog, refreshTrigger) {
-        dataStore.getRemaining()
-    }
-    val progress = remember(goal, showAddDialog, showGoalDialog, showResetDialog, refreshTrigger) {
-        dataStore.getProgress()
-    }
-    val rides = remember(goal, showAddDialog, showGoalDialog, showResetDialog, refreshTrigger) {
-        dataStore.getRides().sortedByDescending { it.timestamp }
-    }
 
     Scaffold(
         topBar = {
@@ -405,13 +398,15 @@ fun BikeGoalApp() {
                     EmptyState()
                 }
             } else {
-                items(rides) { ride ->
+                items(
+                    items = rides,
+                    key = { it.id } // Важно: key для корректного обновления списка
+                ) { ride ->
                     RideItem(
                         ride = ride,
                         onDelete = {
                             dataStore.deleteRide(ride.id)
-                            refreshTrigger++ // Обновление при удалении
-                            goal = dataStore.getGoal()
+                            refreshTrigger++ // Обновляем всё состояние
                         }
                     )
                 }
@@ -425,7 +420,7 @@ fun BikeGoalApp() {
             onDismiss = { showGoalDialog = false },
             onConfirm = { newGoal ->
                 dataStore.saveGoal(newGoal)
-                goal = newGoal
+                refreshTrigger++ // Обновляем всё состояние
                 showGoalDialog = false
             }
         )
@@ -436,7 +431,7 @@ fun BikeGoalApp() {
             onDismiss = { showAddDialog = false },
             onConfirm = { km ->
                 dataStore.addRide(km)
-                refreshTrigger++ // <-- ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+                refreshTrigger++ // <-- ЗДЕСЬ ОБНОВЛЕНИЕ
                 showAddDialog = false
             }
         )
@@ -455,8 +450,7 @@ fun BikeGoalApp() {
                             .edit()
                             .remove("rides_${dataStore.getCurrentMonthKey()}")
                             .apply()
-                        refreshTrigger++ // Обновление при сбросе
-                        goal = currentGoal
+                        refreshTrigger++ // Обновляем всё состояние
                         showResetDialog = false
                     }
                 ) {
@@ -563,7 +557,7 @@ fun StatsRow(totalRidden: Double, remaining: Double, ridesCount: Int) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(
-            title = "Проехал",  // <-- ИЗМЕНЕНО: было "Проехано"
+            title = "Проехал",
             value = "${String.format("%.1f", totalRidden)} км",
             icon = Icons.Default.DirectionsBike,
             modifier = Modifier.weight(1f)
