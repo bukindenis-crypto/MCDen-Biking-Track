@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,13 +20,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -63,7 +60,6 @@ class MainActivity : ComponentActivity() {
 fun AppWithSplash() {
     var showSplash by remember { mutableStateOf(true) }
 
-    // Показываем сплэш 2.5 секунды
     LaunchedEffect(Unit) {
         delay(2500)
         showSplash = false
@@ -89,7 +85,6 @@ fun AppWithSplash() {
 fun SplashScreen() {
     val infiniteTransition = rememberInfiniteTransition(label = "bike_animation")
     
-    // Анимация пульсации велосипеда
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.08f,
@@ -100,7 +95,6 @@ fun SplashScreen() {
         label = "scale"
     )
     
-    // Анимация вращения колёс (через alpha мигание)
     val wheelAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
@@ -111,7 +105,6 @@ fun SplashScreen() {
         label = "wheel_alpha"
     )
 
-    // Анимация появления текста
     val textAlpha by animateFloatAsState(
         targetValue = 1f,
         animationSpec = tween(1000, delayMillis = 500),
@@ -124,10 +117,10 @@ fun SplashScreen() {
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF1A237E),  // Тёмно-синий
-                        Color(0xFF283593),  // Синий
-                        Color(0xFF3949AB),  // Светло-синий
-                        Color(0xFF5C6BC0)   // Ещё светлее
+                        Color(0xFF1A237E),
+                        Color(0xFF283593),
+                        Color(0xFF3949AB),
+                        Color(0xFF5C6BC0)
                     )
                 )
             ),
@@ -138,27 +131,22 @@ fun SplashScreen() {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)
         ) {
-            // Иконка велосипеда (шоссейный)
             Box(
                 modifier = Modifier
                     .size(180.dp)
                     .scale(scale),
                 contentAlignment = Alignment.Center
             ) {
-                // Основная иконка велосипеда
                 Icon(
                     imageVector = Icons.Default.DirectionsBike,
                     contentDescription = "Шоссейный велосипед",
-                    modifier = Modifier
-                        .size(140.dp)
-                        .alpha(wheelAlpha),
-                    tint = Color.White
+                    modifier = Modifier.size(140.dp),
+                    tint = Color.White.copy(alpha = wheelAlpha)
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Название приложения
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.alpha(textAlpha)
@@ -184,11 +172,9 @@ fun SplashScreen() {
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Анимированная полоса загрузки
             LoadingBar()
         }
 
-        // Версия внизу
         Text(
             text = "v1.0",
             fontSize = 14.sp,
@@ -240,7 +226,6 @@ fun LoadingBar() {
 
 // ==================== MAIN APP ====================
 
-// Модель данных
 data class RideRecord(
     val id: String = UUID.randomUUID().toString(),
     val date: String,
@@ -253,12 +238,11 @@ data class MonthlyGoal(
     val targetKm: Double
 )
 
-// Хранилище данных
 class BikeDataStore(context: android.content.Context) {
     private val prefs = context.getSharedPreferences("bike_goal_prefs", android.content.Context.MODE_PRIVATE)
     private val gson = Gson()
 
-    private fun getCurrentMonthKey(): String {
+    fun getCurrentMonthKey(): String {
         val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
         return sdf.format(Date())
     }
@@ -463,7 +447,7 @@ fun BikeGoalApp() {
                         val currentGoal = goal
                         context.getSharedPreferences("bike_goal_prefs", android.content.Context.MODE_PRIVATE)
                             .edit()
-                            .remove("rides_${BikeDataStore(context).getCurrentMonthKey()}")
+                            .remove("rides_${dataStore.getCurrentMonthKey()}")
                             .apply()
                         goal = currentGoal
                         showResetDialog = false
