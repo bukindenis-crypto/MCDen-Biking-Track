@@ -557,7 +557,7 @@ fun StatsRow(totalRidden: Double, remaining: Double, ridesCount: Int) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(
-            title = "Проехано",
+            title = "Проехал за месяц",
             value = "${String.format("%.1f", totalRidden)} км",
             icon = Icons.Default.DirectionsBike,
             modifier = Modifier.weight(1f)
