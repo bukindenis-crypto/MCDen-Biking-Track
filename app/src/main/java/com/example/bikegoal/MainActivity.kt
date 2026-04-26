@@ -305,19 +305,24 @@ fun BikeGoalApp() {
     val context = LocalContext.current
     val dataStore = remember { BikeDataStore(context) }
 
-    // Используем mutableIntStateOf вместо mutableStateOf для чисел
-    var refreshTrigger by remember { mutableIntStateOf(0) }
+    // Состояние пересоздаём принудительно через counter
+    var updateCounter by remember { mutableIntStateOf(0) }
     
-    // Пересчитываем данные при каждом изменении refreshTrigger
-    val goal by remember(refreshTrigger) { mutableStateOf(dataStore.getGoal()) }
-    val totalRidden by remember(refreshTrigger) { mutableStateOf(dataStore.getTotalRidden()) }
-    val remaining by remember(refreshTrigger) { mutableStateOf(dataStore.getRemaining()) }
-    val progress by remember(refreshTrigger) { mutableStateOf(dataStore.getProgress()) }
-    val rides by remember(refreshTrigger) { mutableStateOf(dataStore.getRides().sortedByDescending { it.timestamp }) }
+    // Все данные вычисляем заново при каждой рекомпозиции, но кэшируем через derivedStateOf
+    val goal by remember(updateCounter) { derivedStateOf { dataStore.getGoal() } }
+    val rides by remember(updateCounter) { derivedStateOf { dataStore.getRides().sortedByDescending { it.timestamp } } }
+    val totalRidden by remember(updateCounter) { derivedStateOf { dataStore.getTotalRidden() } }
+    val remaining by remember(updateCounter) { derivedStateOf { dataStore.getRemaining() } }
+    val progress by remember(updateCounter) { derivedStateOf { dataStore.getProgress() } }
 
     var showGoalDialog by remember { mutableStateOf(goal == 0.0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+
+    // Функция для принудительного обновления всего экрана
+    val forceUpdate = {
+        updateCounter++
+    }
 
     Scaffold(
         topBar = {
@@ -400,13 +405,13 @@ fun BikeGoalApp() {
             } else {
                 items(
                     items = rides,
-                    key = { it.id } // Важно: key для корректного обновления списка
+                    key = { it.id }
                 ) { ride ->
                     RideItem(
                         ride = ride,
                         onDelete = {
                             dataStore.deleteRide(ride.id)
-                            refreshTrigger++ // Обновляем всё состояние
+                            forceUpdate() // Принудительное обновление
                         }
                     )
                 }
@@ -420,7 +425,7 @@ fun BikeGoalApp() {
             onDismiss = { showGoalDialog = false },
             onConfirm = { newGoal ->
                 dataStore.saveGoal(newGoal)
-                refreshTrigger++ // Обновляем всё состояние
+                forceUpdate() // Принудительное обновление
                 showGoalDialog = false
             }
         )
@@ -431,7 +436,7 @@ fun BikeGoalApp() {
             onDismiss = { showAddDialog = false },
             onConfirm = { km ->
                 dataStore.addRide(km)
-                refreshTrigger++ // <-- ЗДЕСЬ ОБНОВЛЕНИЕ
+                forceUpdate() // <-- ЗДЕСЬ ОБНОВЛЕНИЕ
                 showAddDialog = false
             }
         )
@@ -445,12 +450,11 @@ fun BikeGoalApp() {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val currentGoal = goal
                         context.getSharedPreferences("bike_goal_prefs", android.content.Context.MODE_PRIVATE)
                             .edit()
                             .remove("rides_${dataStore.getCurrentMonthKey()}")
                             .apply()
-                        refreshTrigger++ // Обновляем всё состояние
+                        forceUpdate() // Принудительное обновление
                         showResetDialog = false
                     }
                 ) {
